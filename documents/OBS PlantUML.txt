@@ -1,0 +1,352 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+' --- Temel Kullanıcı Sınıfları ---
+class Kullanici {
+  - kullaniciID: String
+  - ad: String
+  - soyad: String
+  - telefon: String
+  - adres: String
+  - kullaniciAdi: String
+  - sifre: String
+  + login(kullaniciAdi, sifre): boolean
+}
+
+' --- Ogrenci Sınıfı ---
+class Ogrenci extends Kullanici {
+  - ogrenciNo: String
+  - bolum: String
+  - alinanDersKayitlari: List<OgrenciDersKaydi>
+  - mufredat: Mufredat
+  
+  ' Metotlar
+  + notlariGoruntule(): List<Not>
+  + alinanDersleriGoruntule(): List<Ders>
+  + dersProgramiGoruntule(): List<DersSaati>
+  + agnoHesapla(): double
+  
+  ' Ders Kayıt İşlemleri
+  + dersSec(secilenDers: Ders): boolean
+  + dersBirak(birakilanDers: Ders): boolean
+  
+  ' Akademik Raporlama
+  + transkriptOlustur(): Transkript
+  + mufredatGoruntule(): Mufredat
+  + devamsizlikDurumuSorgula(ders: Ders): Devamsizlik
+  
+  ' İletişim
+  + iletisimBilgileriniGuncelle(yeniTelefon: String, yeniAdres: String): boolean
+}
+
+' --- Hoca Sınıfı (Düzeltildi) ---
+class Hoca extends Kullanici {
+  - unvan: String
+  - odaNo: String
+  - verilenDersler: List<Ders>
+  
+  ' --- Öğretim Metotları ---
+  + dersProgramiGoruntule(): List<DersSaati>
+  ' dersListesiGoruntule metodu mantıksal hata nedeniyle kaldırıldı
+  + notGirisiYap(dersKaydi: OgrenciDersKaydi, vize1: double, vize2: double, proje: double, odev: double, final: double): void
+  + devamsizlikGirisiYap(dersKaydi: OgrenciDersKaydi, eklenenDevamsizlik: int): void
+}
+
+' --- Sekreter Sınıfı (Yönetici - Düzeltildi) ---
+class Sekreter extends Kullanici {
+  - departman: String
+  
+  ' --- Kullanıcı Yönetimi ---
+  + ogrenciEkle(ogrenciBilgileri): Ogrenci
+  + hocaEkle(hocaBilgileri): Hoca
+  + kullaniciSil(kullaniciID: String): boolean
+  + sifreSifirla(kullanici: Kullanici): String
+  
+  ' --- Ders ve Müfredat Yönetimi ---
+  + yeniDersAc(dersKodu, dersAdi, kredi): Ders
+  + derseHocaAta(ders: Ders, hoca: Hoca): boolean
+  + dersProgramiDuzenle(ders: Ders, dersSaatleri: List<DersSaati>): void
+  + mufredatOlustur(zorunluDersler, secmeliDersler): Mufredat
+  + ogrenciyeMufredatAta(ogrenci: Ogrenci, mufredat: Mufredat): void
+  
+  ' --- Öğrenci İşlemleri ve Raporlama ---
+  + ogrenciyiDerseKaydet(ogrenci: Ogrenci, ders: Ders): OgrenciDersKaydi
+  + ogrenciyiDerstenSil(kayit: OgrenciDersKaydi): boolean
+  + topluRaporAl(raporTipi: String): List<Object>
+  + dersListesiGoruntule(ders: Ders): List<Ogrenci> ' Hoca'dan buraya taşındı
+  + ogrenciTranskriptGoruntule(ogrenci: Ogrenci): Transkript ' Transkript erişimi için eklendi
+}
+
+' --- Ders ve İlgili Sınıflar ---
+class Ders {
+  - dersKodu: String
+  - dersAdi: String
+  - kredi: int
+  - dersiVerenHoca: Hoca
+  - dersSaatleri: List<DersSaati>
+}
+
+class DersSaati {
+  - gun: String
+  - saatAraligi: String
+}
+
+class Not {
+  - vizeBir: double
+  - vizeIki: double
+  - proje: double
+  - odev: double
+  - finalNotu: double
+  + harfNotuHesapla(): String
+}
+
+' --- İlişki Sınıfı ---
+class OgrenciDersKaydi {
+ - ders: Ders
+ - donem: String
+ - not: Not
+ - devamsizlik: Devamsizlik
+}
+
+' --- Kalan Veri Modelleri ---
+
+class Devamsizlik {
+  - toplamDersSaati: int
+  - yapilanDevamsizlik: int
+  + devamsizlikYuzdesiHesapla(): double
+}
+
+class Mufredat {
+  - zorunluDersler: List<Ders>
+  - secmeliDersler: List<Ders>
+  - toplamKredi: int
+}
+
+class Transkript {
+  - ogrenciBilgileri: Ogrenci
+  - donemRaporlari: List<DonemRaporu>
+  - genelAGNO: double
+}
+
+class DonemRaporu {
+ - donemAdi: String
+ - donemDersKayitlari: List<OgrenciDersKaydi>
+ - donemYANO: double
+}
+
+
+' --- İLİŞKİLER (Tamamı Kontrol Edildi ve Düzeltildi) ---
+
+' --- 1. Kalıtım (Inheritance) ---
+Kullanici <|-- Ogrenci
+Kullanici <|-- Hoca
+Kullanici <|-- Sekreter
+
+' --- 2. İlişki (Association) ---
+Hoca "1" -- "*" Ders : "Dersi Verir"
+Ogrenci "1" -- "1" Mufredat : "Tabidir"
+Ogrenci "1" -- "*" OgrenciDersKaydi
+DonemRaporu "1" -- "*" OgrenciDersKaydi
+OgrenciDersKaydi "*" -- "1" Ders
+Mufredat "1" -- "*" Ders : "içerir"
+Transkript "1" -- "1" Ogrenci : "aittir"
+
+' --- 3. Sahiplik (Composition) ---
+OgrenciDersKaydi "1" *-- "1" Not
+OgrenciDersKaydi "1" *-- "1" Devamsizlik
+Transkript "1" *-- "*" DonemRaporu
+Ders "1" *-- "*" DersSaati
+
+' --- 4. Kullanım (Dependency) ---
+Ogrenci ..> Transkript : "oluşturur"
+Sekreter ..> Ogrenci : "yönetir"
+Sekreter ..> Hoca : "yönetir"
+Sekreter ..> Ders : "yönetir/yaratır"
+Sekreter ..> Mufredat : "yönetir/yaratır"
+Sekreter ..> OgrenciDersKaydi : "manuel oluşturur/siler"
+Sekreter ..> DersSaati : "düzenler"
+Sekreter ..> Transkript : "erişir"
+
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+EDİT 24.11.2025
+
+
+@startuml
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' --- Temel Kullanıcı Sınıfı ---
+class Kullanici {
+  - kullaniciID: String
+  - ad: String
+  - soyad: String
+  - telefon: String
+  - adres: String
+  - kullaniciAdi: String
+  - sifre: String
+  + login(kullaniciAdi, sifre): boolean
+}
+
+' --- Ogrenci Sınıfı ---
+class Ogrenci {
+  - ogrenciNo: String
+  - bolum: String
+  - alinanDersKayitlari: ArrayList<OgrenciDersKaydi>
+  - mufredat: Mufredat
+  
+  + notlariGoruntule(): ArrayList<Not>
+  + dersProgramiGoruntule(): int[]
+  + agnoHesapla(): double
+  + dersSec(secilenDers: Ders): boolean
+  + dersBirak(birakilanDers: Ders): boolean
+  + transkriptOlustur(): Transkript
+  + mufredatGoruntule(): Mufredat
+  + devamsizlikDurumuSorgula(ders: Ders): Devamsizlik
+  + iletisimBilgileriniGuncelle(yeniTelefon: String, yeniAdres: String): boolean
+  + mezunOlabilirMi(): boolean
+}
+
+' --- Hoca Sınıfı ---
+class Hoca {
+  - unvan: String
+  - odaNo: String
+  - verilenDersler: ArrayList<Ders>
+  
+  + dersProgramiGoruntule(): int[]
+  + notGirisiYap(dersKaydi: OgrenciDersKaydi, vize1: double, vize2: double, proje: double, odev: double, final: double): void
+  + devamsizlikGirisiYap(dersKaydi: OgrenciDersKaydi, eklenenDevamsizlik: int): void
+}
+
+' --- Sekreter Sınıfı ---
+class Sekreter {
+  - departman: String
+  
+  + ogrenciEkle(ogrenciBilgileri): Ogrenci
+  + hocaEkle(hocaBilgileri): Hoca
+  + kullaniciSil(kullaniciID: String): boolean
+  + sifreSifirla(kullanici: Kullanici): String
+  + yeniDersAc(dersKodu, dersAdi, kredi, akts): Ders
+  + derseHocaAta(ders: Ders, hoca: Hoca): boolean
+  + dersProgramiDuzenle(ders: Ders, yeniProgram: int[]): void
+  + mufredatOlustur(zorunluDersler, secmeliDersler): Mufredat
+  + ogrenciyeMufredatAta(ogrenci: Ogrenci, mufredat: Mufredat): void
+  + ogrenciyiDerseKaydet(ogrenci: Ogrenci, ders: Ders): OgrenciDersKaydi
+  + ogrenciyiDerstenSil(kayit: OgrenciDersKaydi): boolean
+  + topluRaporAl(raporTipi: String): ArrayList<Object>
+  + dersListesiGoruntule(ders: Ders): ArrayList<Ogrenci>
+  + ogrenciTranskriptGoruntule(ogrenci: Ogrenci): Transkript
+}
+
+' --- Ders ve Yan Sınıflar ---
+class Ders {
+  - dersKodu: String
+  - dersAdi: String
+  - donemTipi: String
+  - kredi: int
+  - akts: int
+  - dersiVerenHoca: Hoca
+  - haftalikProgram: int[]
+}
+
+class Not {
+  - vizeBir: double
+  - vizeIki: double
+  - proje: double
+  - odev: double
+  - finalNotu: double
+  + harfNotuHesapla(): String
+}
+
+class OgrenciDersKaydi {
+ - ders: Ders
+ - donem: String
+ - not: Not
+ - devamsizlik: Devamsizlik
+}
+
+class Devamsizlik {
+  - toplamDersSaati: int
+  - yapilanDevamsizlik: int
+  + devamsizlikYuzdesiHesapla(): double
+}
+
+class Mufredat {
+  - zorunluDersler: ArrayList<Ders>
+  - secmeliDersler: ArrayList<Ders>
+  - toplamKredi: int
+}
+
+class Transkript {
+  - ogrenciBilgileri: Ogrenci
+  - donemRaporlari: ArrayList<DonemRaporu>
+  - genelAGNO: double
+  + azamiSureDolduMu(): boolean
+}
+
+class DonemRaporu {
+ - donemAdi: String
+ - donemDersKayitlari: ArrayList<OgrenciDersKaydi>
+ - donemYANO: double
+}
+
+' ==========================================
+' === İLİŞKİLER VE KISITLAR (CONSTRAINTS) ===
+' ==========================================
+
+Kullanici <|-- Ogrenci
+Kullanici <|-- Hoca
+Kullanici <|-- Sekreter
+
+Hoca "1" <--> "*" Ders : "Verir/Verilir"
+
+' KISIT: Mezuniyet Şartı
+Ogrenci "n" --> "1" Mufredat : "{Mezuniyet: Min 240 AKTS}"
+
+' KISIT: Kredi Limiti
+Ogrenci "1" --> "*" OgrenciDersKaydi : "Listeler\n{Kısıt: Max 25-28 Kredi/Dönem}"
+
+OgrenciDersKaydi "n" --> "n" Ders 
+DonemRaporu "1" --> "*" OgrenciDersKaydi : "İçerir"
+
+OgrenciDersKaydi "1" *-- "1" Not
+OgrenciDersKaydi "1" *-- "1" Devamsizlik
+
+' KISIT: Max 7 Yıl (14 Dönem)
+Transkript "1" *-- "0..14" DonemRaporu : "{Kısıt: Max 7 Yıl}"
+
+Mufredat "1" o-- "*" Ders : "Kapsar"
+
+' Transkript İlişkisi
+Transkript "1" <--> "1" Ogrenci : "Aittir\n{Hesaplama: Kredi Ağırlıklı Ort.}"
+
+Sekreter ..> Ogrenci
+Sekreter ..> Hoca
+Sekreter ..> Ders
+Sekreter ..> Mufredat
+Sekreter ..> OgrenciDersKaydi
+Sekreter ..> Transkript
+
+@enduml
